@@ -1,342 +1,561 @@
-# Diagrama BPMN - Sistema de Gestión de Usuarios
+# Diagrama UML - Sistema de Gestión de Usuarios
 
-## Proceso Principal de Autenticación y Registro
-
-```mermaid
-flowchart TD
-    Start([Inicio]) --> Decision{¿Qué operación desea realizar?}
-    
-    %% Proceso de Login
-    Decision -->|Login| LoginProcess[Proceso de Login]
-    LoginProcess --> LoginType{¿Tipo de usuario?}
-    LoginType -->|Interno| InternalLogin[Login Interno]
-    LoginType -->|Externo| ExternalLogin[Login Externo]
-    
-    InternalLogin --> ValidateInternal[Validar credenciales internas]
-    ValidateInternal --> CheckActiveInternal{¿Usuario activo?}
-    CheckActiveInternal -->|No| ErrorInactive[Error: Usuario inactivo]
-    CheckActiveInternal -->|Sí| CheckTypeInternal{¿Es usuario interno?}
-    CheckTypeInternal -->|No| ErrorTypeInternal[Error: Usuario no es interno]
-    CheckTypeInternal -->|Sí| GenerateTokenInternal[Generar token JWT]
-    
-    ExternalLogin --> ValidateExternal[Validar credenciales externas]
-    ValidateExternal --> CheckActiveExternal{¿Usuario activo?}
-    CheckActiveExternal -->|No| ErrorInactive
-    CheckActiveExternal -->|Sí| CheckTypeExternal{¿Es usuario externo?}
-    CheckTypeExternal -->|No| ErrorTypeExternal[Error: Usuario no es externo]
-    CheckTypeExternal -->|Sí| GenerateTokenExternal[Generar token JWT]
-    
-    GenerateTokenInternal --> SuccessLogin[Login exitoso]
-    GenerateTokenExternal --> SuccessLogin
-    SuccessLogin --> EndLogin([Fin - Token generado])
-    
-    %% Proceso de Registro
-    Decision -->|Registro| RegisterProcess[Proceso de Registro]
-    RegisterProcess --> RegisterType{¿Tipo de registro?}
-    RegisterType -->|Externo| ExternalRegister[Registro Externo]
-    RegisterType -->|Interno| InternalRegister[Registro Interno]
-    
-    %% Registro Externo
-    ExternalRegister --> ValidateEmailExt[Validar email único]
-    ValidateEmailExt --> EmailExistsExt{¿Email existe?}
-    EmailExistsExt -->|Sí| ErrorEmailExists[Error: Email ya existe]
-    EmailExistsExt -->|No| ValidateDocExt[Validar documento único]
-    ValidateDocExt --> DocExistsExt{¿Documento existe?}
-    DocExistsExt -->|Sí| ErrorDocExists[Error: Documento ya existe]
-    DocExistsExt -->|No| ValidateFormatExt[Validar formato de datos]
-    ValidateFormatExt --> FormatValidExt{¿Formato válido?}
-    FormatValidExt -->|No| ErrorFormat[Error: Formato inválido]
-    FormatValidExt -->|Sí| CreateUserExt[Crear usuario externo]
-    CreateUserExt --> SetExternalProps[Establecer propiedades externas]
-    SetExternalProps --> HashPasswordExt[Encriptar contraseña]
-    HashPasswordExt --> SaveUserExt[Guardar usuario]
-    SaveUserExt --> SuccessExt[Registro externo exitoso]
-    SuccessExt --> EndExt([Fin - Usuario externo creado])
-    
-    %% Registro Interno
-    InternalRegister --> ValidateEmailInt[Validar email único]
-    ValidateEmailInt --> EmailExistsInt{¿Email existe?}
-    EmailExistsInt -->|Sí| ErrorEmailExists
-    EmailExistsInt -->|No| ValidateDocInt[Validar documento único]
-    ValidateDocInt --> DocExistsInt{¿Documento existe?}
-    DocExistsInt -->|Sí| ErrorDocExists
-    DocExistsInt -->|No| ValidateUsernameInt[Validar username único]
-    ValidateUsernameInt --> UsernameExists{¿Username existe?}
-    UsernameExists -->|Sí| ErrorUsernameExists[Error: Username ya existe]
-    UsernameExists -->|No| ValidateRoles[Validar roles existentes]
-    ValidateRoles --> RolesValid{¿Roles válidos?}
-    RolesValid -->|No| ErrorRoles[Error: Roles inválidos]
-    RolesValid -->|Sí| ValidateFormatInt[Validar formato de datos]
-    ValidateFormatInt --> FormatValidInt{¿Formato válido?}
-    FormatValidInt -->|No| ErrorFormat
-    FormatValidInt -->|Sí| CreateUserInt[Crear usuario interno]
-    CreateUserInt --> SetInternalProps[Establecer propiedades internas]
-    SetInternalProps --> HashPasswordInt[Encriptar contraseña]
-    HashPasswordInt --> SaveUserInt[Guardar usuario]
-    SaveUserInt --> AssignRoles[Asignar roles]
-    AssignRoles --> SaveUserRoles[Guardar relaciones usuario-rol]
-    SaveUserRoles --> SuccessInt[Registro interno exitoso]
-    SuccessInt --> EndInt([Fin - Usuario interno creado])
-    
-    %% Errores
-    ErrorInactive --> EndError([Fin - Error])
-    ErrorTypeInternal --> EndError
-    ErrorTypeExternal --> EndError
-    ErrorEmailExists --> EndError
-    ErrorDocExists --> EndError
-    ErrorUsernameExists --> EndError
-    ErrorFormat --> EndError
-    ErrorRoles --> EndError
-    
-    %% Estilos
-    classDef startEnd fill:#e1f5fe
-    classDef process fill:#f3e5f5
-    classDef decision fill:#fff3e0
-    classDef error fill:#ffebee
-    classDef success fill:#e8f5e8
-    
-    class Start,EndLogin,EndExt,EndInt,EndError startEnd
-    class LoginProcess,RegisterProcess,ValidateInternal,ValidateExternal,CreateUserExt,CreateUserInt process
-    class Decision,LoginType,CheckActiveInternal,CheckTypeInternal,CheckActiveExternal,CheckTypeExternal,RegisterType,EmailExistsExt,DocExistsExt,FormatValidExt,EmailExistsInt,DocExistsInt,UsernameExists,RolesValid,FormatValidInt decision
-    class ErrorInactive,ErrorTypeInternal,ErrorTypeExternal,ErrorEmailExists,ErrorDocExists,ErrorUsernameExists,ErrorFormat,ErrorRoles error
-    class SuccessLogin,SuccessExt,SuccessInt success
-```
-
-## Proceso Detallado de Autenticación
+## Diagrama de Clases UML
 
 ```mermaid
-flowchart TD
-    StartAuth([Inicio Autenticación]) --> ReceiveCredentials[Recibir credenciales]
-    ReceiveCredentials --> ValidateFormat[Validar formato de credenciales]
-    ValidateFormat --> FormatOK{¿Formato válido?}
-    FormatOK -->|No| ReturnFormatError[Retornar error de formato]
-    FormatOK -->|Sí| AuthenticateUser[Autenticar usuario]
-    AuthenticateUser --> AuthSuccess{¿Autenticación exitosa?}
-    AuthSuccess -->|No| ReturnAuthError[Retornar error de autenticación]
-    AuthSuccess -->|Sí| LoadUserDetails[Cargar detalles del usuario]
-    LoadUserDetails --> CheckUserStatus[Verificar estado del usuario]
-    CheckUserStatus --> UserActive{¿Usuario activo?}
-    UserActive -->|No| ReturnInactiveError[Retornar error: usuario inactivo]
-    UserActive -->|Sí| CheckUserType[Verificar tipo de usuario]
-    CheckUserType --> TypeMatch{¿Tipo coincide con endpoint?}
-    TypeMatch -->|No| ReturnTypeError[Retornar error: tipo incorrecto]
-    TypeMatch -->|Sí| GenerateJWT[Generar token JWT]
-    GenerateJWT --> CreateResponse[Crear respuesta de login]
-    CreateResponse --> ReturnSuccess[Retornar éxito con token]
+classDiagram
+    %% Controladores
+    class AuthController {
+        -AuthServiceImpl authServiceImpl
+        +loginInternal(LoginRequest) ResponseEntity~LoginResponse~
+        +loginExternal(LoginRequest) ResponseEntity~LoginResponse~
+        -mapToUserResponse(UserModel) UserResponse
+    }
     
-    ReturnFormatError --> EndAuth([Fin])
-    ReturnAuthError --> EndAuth
-    ReturnInactiveError --> EndAuth
-    ReturnTypeError --> EndAuth
-    ReturnSuccess --> EndAuth
+    class UserController {
+        -UserService userService
+        +registerExternal(ExternalUserRegisterRequestDTO) ResponseEntity~ExternalUserRegisterResponseDTO~
+        +registerInternal(InternalUserRegisterRequestDTO) ResponseEntity~InternalUserRegisterResponseDTO~
+        +getAll() ResponseEntity~List~UserDebugModel~~
+    }
     
-    classDef startEnd fill:#e1f5fe
-    classDef process fill:#f3e5f5
-    classDef decision fill:#fff3e0
-    classDef error fill:#ffebee
-    classDef success fill:#e8f5e8
+    %% Servicios
+    class AuthServiceImpl {
+        -AuthenticationManager authenticationManager
+        -JwtUtil jwtUtil
+        -UserServiceImpl usuarioService
+        +loginInternal(String, String) LoginResult
+        +loginExternal(String, String) LoginResult
+        -mapToModel(User) UserModel
+    }
     
-    class StartAuth,EndAuth startEnd
-    class ReceiveCredentials,ValidateFormat,AuthenticateUser,LoadUserDetails,CheckUserStatus,CheckUserType,GenerateJWT,CreateResponse process
-    class FormatOK,AuthSuccess,UserActive,TypeMatch decision
-    class ReturnFormatError,ReturnAuthError,ReturnInactiveError,ReturnTypeError error
-    class ReturnSuccess success
+    class UserServiceImpl {
+        -UserRepository userRepository
+        -ModelMapper modelMapper
+        -RoleService roleService
+        -PasswordEncoder passwordEncoder
+        -UserRoleService userRoleService
+        +findById(Long) UserModel
+        +findByUsername(String) UserModel
+        +findByEmail(String) UserModel
+        +findAll() List~UserModel~
+        +loadUserByUsername(String) CustomUserDetails
+        +registerExternal(ExternalUserRegisterRequestDTO) ExternalUserRegisterResponseDTO
+        +registerInternal(InternalUserRegisterRequestDTO) InternalUserRegisterResponseDTO
+        +getAll() List~UserDebugModel~
+        -buildExternalUser(ExternalUserRegisterRequestDTO, String, String) User
+        -buildInternalUser(InternalUserRegisterRequestDTO, String, String, String) User
+        -validationDocument(String) void
+        -validationEmail(String) void
+        -mapToModel(User) UserModel
+    }
+    
+    %% Entidades
+    class User {
+        -Long id
+        -String firstName
+        -String lastName
+        -String username
+        -String email
+        -String document
+        -String passwordHash
+        -Boolean isActive
+        -Boolean isEmailVerified
+        -Boolean isExternal
+        -LocalDateTime createdAt
+        -LocalDateTime updatedAt
+        -Set~UserRole~ userRoles
+        +getId() Long
+        +getFirstName() String
+        +getLastName() String
+        +getUsername() String
+        +getEmail() String
+        +getDocument() String
+        +getPasswordHash() String
+        +getIsActive() Boolean
+        +getIsEmailVerified() Boolean
+        +getIsExternal() Boolean
+        +getCreatedAt() LocalDateTime
+        +getUpdatedAt() LocalDateTime
+        +getUserRoles() Set~UserRole~
+    }
+    
+    class Role {
+        -Long id
+        -String name
+        -String description
+        -Set~UserRole~ userRoles
+        +getId() Long
+        +getName() String
+        +getDescription() String
+        +getUserRoles() Set~UserRole~
+    }
+    
+    class UserRole {
+        -UserRoleId id
+        -User user
+        -Role role
+        +getId() UserRoleId
+        +getUser() User
+        +getRole() Role
+    }
+    
+    class UserRoleId {
+        -Long userId
+        -Long roleId
+        +getUserId() Long
+        +getRoleId() Long
+    }
+    
+    class EmailVerification {
+        -Long id
+        -User user
+        -String token
+        -LocalDateTime expiresAt
+        -Boolean isUsed
+        +getId() Long
+        +getUser() User
+        +getToken() String
+        +getExpiresAt() LocalDateTime
+        +getIsUsed() Boolean
+    }
+    
+    class RecoveryToken {
+        -Long id
+        -User user
+        -String token
+        -LocalDateTime expiresAt
+        -Boolean isUsed
+        +getId() Long
+        +getUser() User
+        +getToken() String
+        +getExpiresAt() LocalDateTime
+        +getIsUsed() Boolean
+    }
+    
+    %% DTOs
+    class LoginRequest {
+        -String username
+        -String email
+        -String password
+        +getUsername() String
+        +getEmail() String
+        +getPassword() String
+    }
+    
+    class LoginResponse {
+        -Boolean success
+        -String message
+        -UserResponse user
+        -String token
+        +getSuccess() Boolean
+        +getMessage() String
+        +getUser() UserResponse
+        +getToken() String
+    }
+    
+    class UserResponse {
+        -Long id
+        -String firstName
+        -String lastName
+        -String username
+        -String email
+        -String document
+        -Boolean isActive
+        -Boolean isEmailVerified
+        -Boolean isExternal
+        -LocalDateTime createdAt
+        -LocalDateTime updatedAt
+        +getId() Long
+        +getFirstName() String
+        +getLastName() String
+        +getUsername() String
+        +getEmail() String
+        +getDocument() String
+        +getIsActive() Boolean
+        +getIsEmailVerified() Boolean
+        +getIsExternal() Boolean
+        +getCreatedAt() LocalDateTime
+        +getUpdatedAt() LocalDateTime
+    }
+    
+    class ExternalUserRegisterRequestDTO {
+        -String firstName
+        -String lastName
+        -String email
+        -String document
+        -String passwordHash
+        +getFirstName() String
+        +getLastName() String
+        +getEmail() String
+        +getDocument() String
+        +getPasswordHash() String
+    }
+    
+    class ExternalUserRegisterResponseDTO {
+        -Long id
+        -String email
+        -String message
+        +getId() Long
+        +getEmail() String
+        +getMessage() String
+    }
+    
+    class InternalUserRegisterRequestDTO {
+        -String firstName
+        -String lastName
+        -String document
+        -String email
+        -String username
+        -String passwordHash
+        -List~Long~ role
+        +getFirstName() String
+        +getLastName() String
+        +getDocument() String
+        +getEmail() String
+        +getUsername() String
+        +getPasswordHash() String
+        +getRole() List~Long~
+    }
+    
+    class InternalUserRegisterResponseDTO {
+        -Long id
+        -String firstName
+        -String lastName
+        -String document
+        -String email
+        -String userName
+        -Boolean isActive
+        -String message
+        +getId() Long
+        +getFirstName() String
+        +getLastName() String
+        +getDocument() String
+        +getEmail() String
+        +getUserName() String
+        +getIsActive() Boolean
+        +getMessage() String
+    }
+    
+    class UserDebugModel {
+        -Long id
+        -String firstName
+        -String lastName
+        -String username
+        -String email
+        -String document
+        -String passwordHash
+        -Boolean isActive
+        -Boolean isExternal
+        -LocalDateTime createdAt
+        -List~String~ roles
+        +getId() Long
+        +getFirstName() String
+        +getLastName() String
+        +getUsername() String
+        +getEmail() String
+        +getDocument() String
+        +getPasswordHash() String
+        +getIsActive() Boolean
+        +getIsExternal() Boolean
+        +getCreatedAt() LocalDateTime
+        +getRoles() List~String~
+        +fromEntity(User) UserDebugModel
+    }
+    
+    %% Modelos
+    class UserModel {
+        -Long id
+        -String firstName
+        -String lastName
+        -String username
+        -String email
+        -String document
+        -Boolean isActive
+        -Boolean isEmailVerified
+        -Boolean isExternal
+        -LocalDateTime createdAt
+        -LocalDateTime updatedAt
+        +getId() Long
+        +getFirstName() String
+        +getLastName() String
+        +getUsername() String
+        +getEmail() String
+        +getDocument() String
+        +getIsActive() Boolean
+        +getIsEmailVerified() Boolean
+        +getIsExternal() Boolean
+        +getCreatedAt() LocalDateTime
+        +getUpdatedAt() LocalDateTime
+    }
+    
+    class LoginResult {
+        -UserModel user
+        -String token
+        +getUser() UserModel
+        +getToken() String
+    }
+    
+    %% Seguridad
+    class CustomUserDetails {
+        -Long id
+        -String username
+        -String password
+        -Collection~GrantedAuthority~ authorities
+        +getId() Long
+        +getUsername() String
+        +getPassword() String
+        +getAuthorities() Collection~GrantedAuthority~
+    }
+    
+    class JwtUtil {
+        -String secret
+        -int expiration
+        +generateToken(CustomUserDetails) String
+        +extractUsername(String) String
+        +validateToken(String, CustomUserDetails) Boolean
+    }
+    
+    class JwtRequestFilter {
+        -JwtUtil jwtUtil
+        -UserServiceImpl userService
+        +doFilterInternal(ServletRequest, ServletResponse, FilterChain) void
+    }
+    
+    %% Repositorios
+    class UserRepository {
+        +findById(Long) Optional~User~
+        +findByUsername(String) Optional~User~
+        +findByEmail(String) Optional~User~
+        +findByDocument(String) Optional~User~
+        +existsByEmail(String) Boolean
+        +save(User) User
+        +findAll() List~User~
+    }
+    
+    class RoleRepository {
+        +findById(Long) Optional~Role~
+        +findAllById(List~Long~) List~Role~
+        +save(Role) Role
+        +findAll() List~Role~
+    }
+    
+    class UserRoleRepository {
+        +save(UserRole) UserRole
+        +saveAll(List~UserRole~) List~UserRole~
+        +findByUser(User) List~UserRole~
+        +findByRole(Role) List~UserRole~
+    }
+    
+    %% Servicios de Negocio
+    class RoleService {
+        +findById(Long) Role
+        +findAllById(List~Long~) List~Role~
+        +save(Role) Role
+        +findAll() List~Role~
+    }
+    
+    class UserRoleService {
+        +save(UserRole) UserRole
+        +saveAll(List~UserRole~) List~UserRole~
+        +findByUser(User) List~UserRole~
+        +findByRole(Role) List~UserRole~
+    }
+    
+    %% Relaciones
+    AuthController --> AuthServiceImpl : uses
+    UserController --> UserServiceImpl : uses
+    AuthServiceImpl --> UserServiceImpl : uses
+    AuthServiceImpl --> JwtUtil : uses
+    UserServiceImpl --> UserRepository : uses
+    UserServiceImpl --> RoleService : uses
+    UserServiceImpl --> UserRoleService : uses
+    UserServiceImpl --> PasswordEncoder : uses
+    
+    User ||--o{ UserRole : has
+    Role ||--o{ UserRole : assigned to
+    UserRole }o--|| UserRoleId : identified by
+    User ||--o{ EmailVerification : has
+    User ||--o{ RecoveryToken : has
+    
+    UserRepository --> User : manages
+    RoleRepository --> Role : manages
+    UserRoleRepository --> UserRole : manages
+    
+    RoleService --> RoleRepository : uses
+    UserRoleService --> UserRoleRepository : uses
+    
+    %% Conversiones
+    UserModel <-- User : maps to
+    UserResponse <-- UserModel : maps to
+    UserDebugModel <-- User : maps to
+    LoginResult --> UserModel : contains
+    LoginResponse --> UserResponse : contains
+    LoginResponse --> LoginResult : maps from
 ```
 
-## Proceso Detallado de Registro Externo
+## Diagrama de Secuencia - Proceso de Login
 
 ```mermaid
-flowchart TD
-    StartExtReg([Inicio Registro Externo]) --> ReceiveData[Recibir datos de registro]
-    ReceiveData --> ValidateFirstName[Validar nombre]
-    ValidateFirstName --> FirstNameOK{¿Nombre válido?}
-    FirstNameOK -->|No| ReturnNameError[Retornar error de nombre]
-    FirstNameOK -->|Sí| ValidateLastName[Validar apellido]
-    ValidateLastName --> LastNameOK{¿Apellido válido?}
-    LastNameOK -->|No| ReturnLastNameError[Retornar error de apellido]
-    LastNameOK -->|Sí| ValidateEmail[Validar email]
-    ValidateEmail --> EmailFormatOK{¿Formato de email válido?}
-    EmailFormatOK -->|No| ReturnEmailFormatError[Retornar error de formato email]
-    EmailFormatOK -->|Sí| CheckEmailUnique[Verificar email único]
-    CheckEmailUnique --> EmailUnique{¿Email único?}
-    EmailUnique -->|No| ReturnEmailExistsError[Retornar error: email existe]
-    EmailUnique -->|Sí| ValidateDocument[Validar documento]
-    ValidateDocument --> DocFormatOK{¿Formato de documento válido?}
-    DocFormatOK -->|No| ReturnDocFormatError[Retornar error de formato documento]
-    DocFormatOK -->|Sí| CheckDocUnique[Verificar documento único]
-    CheckDocUnique --> DocUnique{¿Documento único?}
-    DocUnique -->|No| ReturnDocExistsError[Retornar error: documento existe]
-    DocUnique -->|Sí| ValidatePassword[Validar contraseña]
-    ValidatePassword --> PasswordOK{¿Contraseña válida?}
-    PasswordOK -->|No| ReturnPasswordError[Retornar error de contraseña]
-    PasswordOK -->|Sí| CreateUserEntity[Crear entidad usuario]
-    CreateUserEntity --> SetExternalProperties[Establecer propiedades externas]
-    SetExternalProperties --> HashPassword[Encriptar contraseña]
-    HashPassword --> SaveUser[Guardar usuario en BD]
-    SaveUser --> SaveSuccess{¿Guardado exitoso?}
-    SaveSuccess -->|No| ReturnSaveError[Retornar error de guardado]
-    SaveSuccess -->|Sí| CreateResponse[Crear respuesta]
-    CreateResponse --> ReturnSuccess[Retornar éxito]
+sequenceDiagram
+    participant Client as Cliente
+    participant AuthController as AuthController
+    participant AuthService as AuthServiceImpl
+    participant UserService as UserServiceImpl
+    participant UserRepo as UserRepository
+    participant JwtUtil as JwtUtil
     
-    ReturnNameError --> EndExtReg([Fin])
-    ReturnLastNameError --> EndExtReg
-    ReturnEmailFormatError --> EndExtReg
-    ReturnEmailExistsError --> EndExtReg
-    ReturnDocFormatError --> EndExtReg
-    ReturnDocExistsError --> EndExtReg
-    ReturnPasswordError --> EndExtReg
-    ReturnSaveError --> EndExtReg
-    ReturnSuccess --> EndExtReg
+    Client->>AuthController: POST /api/v1/auth/internal/login
+    Note over Client,AuthController: LoginRequest{username, password}
     
-    classDef startEnd fill:#e1f5fe
-    classDef process fill:#f3e5f5
-    classDef decision fill:#fff3e0
-    classDef error fill:#ffebee
-    classDef success fill:#e8f5e8
+    AuthController->>AuthService: loginInternal(username, password)
     
-    class StartExtReg,EndExtReg startEnd
-    class ReceiveData,ValidateFirstName,ValidateLastName,ValidateEmail,CheckEmailUnique,ValidateDocument,CheckDocUnique,ValidatePassword,CreateUserEntity,SetExternalProperties,HashPassword,SaveUser,CreateResponse process
-    class FirstNameOK,LastNameOK,EmailFormatOK,EmailUnique,DocFormatOK,DocUnique,PasswordOK,SaveSuccess decision
-    class ReturnNameError,ReturnLastNameError,ReturnEmailFormatError,ReturnEmailExistsError,ReturnDocFormatError,ReturnDocExistsError,ReturnPasswordError,ReturnSaveError error
-    class ReturnSuccess success
+    AuthService->>AuthService: authenticationManager.authenticate()
+    Note over AuthService: Validar credenciales
+    
+    AuthService->>UserService: loadUserByUsername(username)
+    UserService->>UserRepo: findByUsername(username)
+    UserRepo-->>UserService: User entity
+    UserService-->>AuthService: CustomUserDetails
+    
+    AuthService->>JwtUtil: generateToken(userDetails)
+    JwtUtil-->>AuthService: JWT Token
+    
+    AuthService->>UserService: findByUsername(username)
+    UserService->>UserRepo: findByUsername(username)
+    UserRepo-->>UserService: User entity
+    UserService-->>AuthService: UserModel
+    
+    AuthService->>AuthService: Validar isActive y isExternal
+    Note over AuthService: Verificar que usuario esté activo<br/>y sea interno
+    
+    AuthService-->>AuthController: LoginResult{user, token}
+    
+    AuthController->>AuthController: mapToUserResponse(user)
+    AuthController-->>Client: LoginResponse{success, message, user, token}
+    Note over Client,AuthController: 200 OK con datos del usuario y token
 ```
 
-## Proceso Detallado de Registro Interno
+## Diagrama de Secuencia - Proceso de Registro Externo
 
 ```mermaid
-flowchart TD
-    StartIntReg([Inicio Registro Interno]) --> ReceiveDataInt[Recibir datos de registro interno]
-    ReceiveDataInt --> ValidateDataInt[Validar datos básicos]
-    ValidateDataInt --> DataOK{¿Datos válidos?}
-    DataOK -->|No| ReturnDataError[Retornar error de datos]
-    DataOK -->|Sí| CheckEmailUniqueInt[Verificar email único]
-    CheckEmailUniqueInt --> EmailUniqueInt{¿Email único?}
-    EmailUniqueInt -->|No| ReturnEmailExistsErrorInt[Retornar error: email existe]
-    EmailUniqueInt -->|Sí| CheckDocUniqueInt[Verificar documento único]
-    CheckDocUniqueInt --> DocUniqueInt{¿Documento único?}
-    DocUniqueInt -->|No| ReturnDocExistsErrorInt[Retornar error: documento existe]
-    DocUniqueInt -->|Sí| CheckUsernameUnique[Verificar username único]
-    CheckUsernameUnique --> UsernameUnique{¿Username único?}
-    UsernameUnique -->|No| ReturnUsernameExistsError[Retornar error: username existe]
-    UsernameUnique -->|Sí| ValidateRoles[Validar roles]
-    ValidateRoles --> RolesExist{¿Roles existen?}
-    RolesExist -->|No| ReturnRolesError[Retornar error: roles inválidos]
-    RolesExist -->|Sí| CreateUserEntityInt[Crear entidad usuario interno]
-    CreateUserEntityInt --> SetInternalProperties[Establecer propiedades internas]
-    SetInternalProperties --> HashPasswordInt[Encriptar contraseña]
-    HashPasswordInt --> SaveUserInt[Guardar usuario en BD]
-    SaveUserInt --> SaveSuccessInt{¿Guardado exitoso?}
-    SaveSuccessInt -->|No| ReturnSaveErrorInt[Retornar error de guardado]
-    SaveSuccessInt -->|Sí| CreateUserRoles[Crear relaciones usuario-rol]
-    CreateUserRoles --> SaveUserRoles[Guardar relaciones en BD]
-    SaveUserRoles --> RolesSaved{¿Roles guardados?}
-    RolesSaved -->|No| ReturnRolesSaveError[Retornar error: roles no guardados]
-    RolesSaved -->|Sí| CreateResponseInt[Crear respuesta]
-    CreateResponseInt --> ReturnSuccessInt[Retornar éxito]
+sequenceDiagram
+    participant Client as Cliente
+    participant UserController as UserController
+    participant UserService as UserServiceImpl
+    participant UserRepo as UserRepository
+    participant PasswordEncoder as PasswordEncoder
     
-    ReturnDataError --> EndIntReg([Fin])
-    ReturnEmailExistsErrorInt --> EndIntReg
-    ReturnDocExistsErrorInt --> EndIntReg
-    ReturnUsernameExistsError --> EndIntReg
-    ReturnRolesError --> EndIntReg
-    ReturnSaveErrorInt --> EndIntReg
-    ReturnRolesSaveError --> EndIntReg
-    ReturnSuccessInt --> EndIntReg
+    Client->>UserController: POST /api/v1/user/external/register
+    Note over Client,UserController: ExternalUserRegisterRequestDTO
     
-    classDef startEnd fill:#e1f5fe
-    classDef process fill:#f3e5f5
-    classDef decision fill:#fff3e0
-    classDef error fill:#ffebee
-    classDef success fill:#e8f5e8
+    UserController->>UserService: registerExternal(request)
     
-    class StartIntReg,EndIntReg startEnd
-    class ReceiveDataInt,ValidateDataInt,CheckEmailUniqueInt,CheckDocUniqueInt,CheckUsernameUnique,ValidateRoles,CreateUserEntityInt,SetInternalProperties,HashPasswordInt,SaveUserInt,CreateUserRoles,SaveUserRoles,CreateResponseInt process
-    class DataOK,EmailUniqueInt,DocUniqueInt,UsernameUnique,RolesExist,SaveSuccessInt,RolesSaved decision
-    class ReturnDataError,ReturnEmailExistsErrorInt,ReturnDocExistsErrorInt,ReturnUsernameExistsError,ReturnRolesError,ReturnSaveErrorInt,ReturnRolesSaveError error
-    class ReturnSuccessInt success
+    UserService->>UserService: validationEmail(email)
+    UserService->>UserRepo: existsByEmail(email)
+    UserRepo-->>UserService: Boolean
+    
+    UserService->>UserService: validationDocument(document)
+    UserService->>UserRepo: findByDocument(document)
+    UserRepo-->>UserService: Optional<User>
+    
+    UserService->>UserService: buildExternalUser(request)
+    Note over UserService: Crear entidad User con:<br/>- isActive = false<br/>- isExternal = true<br/>- username = document
+    
+    UserService->>PasswordEncoder: encode(passwordHash)
+    PasswordEncoder-->>UserService: Encoded password
+    
+    UserService->>UserRepo: save(user)
+    UserRepo-->>UserService: Saved User
+    
+    UserService-->>UserController: ExternalUserRegisterResponseDTO
+    UserController-->>Client: 201 Created
+    Note over Client,UserController: {id, email, message}
 ```
 
-## Proceso de Validación de Seguridad
+## Diagrama de Secuencia - Proceso de Registro Interno
 
 ```mermaid
-flowchart TD
-    StartSecurity([Inicio Validación de Seguridad]) --> ReceiveToken[Recibir token JWT]
-    ReceiveToken --> ValidateTokenFormat[Validar formato del token]
-    ValidateTokenFormat --> TokenFormatOK{¿Formato válido?}
-    TokenFormatOK -->|No| ReturnTokenFormatError[Retornar error de formato token]
-    TokenFormatOK -->|Sí| ExtractUsername[Extraer username del token]
-    ExtractUsername --> LoadUserFromToken[Cargar usuario desde token]
-    LoadUserFromToken --> UserExists{¿Usuario existe?}
-    UserExists -->|No| ReturnUserNotFound[Retornar error: usuario no encontrado]
-    UserExists -->|Sí| ValidateTokenExpiry[Validar expiración del token]
-    ValidateTokenExpiry --> TokenValid{¿Token válido?}
-    TokenValid -->|No| ReturnTokenExpired[Retornar error: token expirado]
-    TokenValid -->|Sí| CheckUserActive[Verificar usuario activo]
-    CheckUserActive --> UserActiveSec{¿Usuario activo?}
-    UserActiveSec -->|No| ReturnUserInactive[Retornar error: usuario inactivo]
-    UserActiveSec -->|Sí| AuthorizeAccess[Autorizar acceso]
-    AuthorizeAccess --> ReturnAuthorized[Retornar autorizado]
+sequenceDiagram
+    participant Client as Cliente
+    participant UserController as UserController
+    participant UserService as UserServiceImpl
+    participant UserRepo as UserRepository
+    participant RoleService as RoleService
+    participant UserRoleService as UserRoleService
+    participant PasswordEncoder as PasswordEncoder
     
-    ReturnTokenFormatError --> EndSecurity([Fin])
-    ReturnUserNotFound --> EndSecurity
-    ReturnTokenExpired --> EndSecurity
-    ReturnUserInactive --> EndSecurity
-    ReturnAuthorized --> EndSecurity
+    Client->>UserController: POST /api/v1/user/internal/register
+    Note over Client,UserController: InternalUserRegisterRequestDTO
     
-    classDef startEnd fill:#e1f5fe
-    classDef process fill:#f3e5f5
-    classDef decision fill:#fff3e0
-    classDef error fill:#ffebee
-    classDef success fill:#e8f5e8
+    UserController->>UserService: registerInternal(request)
     
-    class StartSecurity,EndSecurity startEnd
-    class ReceiveToken,ValidateTokenFormat,ExtractUsername,LoadUserFromToken,ValidateTokenExpiry,CheckUserActive,AuthorizeAccess process
-    class TokenFormatOK,UserExists,TokenValid,UserActiveSec decision
-    class ReturnTokenFormatError,ReturnUserNotFound,ReturnTokenExpired,ReturnUserInactive error
-    class ReturnAuthorized success
+    UserService->>UserService: validationEmail(email)
+    UserService->>UserRepo: existsByEmail(email)
+    UserRepo-->>UserService: Boolean
+    
+    UserService->>UserService: validationDocument(document)
+    UserService->>UserRepo: findByDocument(document)
+    UserRepo-->>UserService: Optional<User>
+    
+    UserService->>UserRepo: findByUsername(username)
+    UserRepo-->>UserService: Optional<User>
+    
+    UserService->>RoleService: findAllById(roleIds)
+    RoleService-->>UserService: List<Role>
+    
+    UserService->>UserService: buildInternalUser(request)
+    Note over UserService: Crear entidad User con:<br/>- isActive = true<br/>- isExternal = false<br/>- username personalizado
+    
+    UserService->>PasswordEncoder: encode(passwordHash)
+    PasswordEncoder-->>UserService: Encoded password
+    
+    UserService->>UserRepo: save(user)
+    UserRepo-->>UserService: Saved User
+    
+    UserService->>UserService: Crear UserRole entities
+    UserService->>UserRoleService: saveAll(userRoles)
+    UserRoleService-->>UserService: List<UserRole>
+    
+    UserService-->>UserController: InternalUserRegisterResponseDTO
+    UserController-->>Client: 201 Created
+    Note over Client,UserController: {id, firstName, lastName, document, email, userName, isActive, message}
 ```
 
-## Resumen de Procesos BPMN
+## Resumen de la Arquitectura
 
-### 1. **Proceso Principal de Autenticación y Registro**
-- **Entrada**: Credenciales de usuario (username/email, password)
-- **Procesos**: Validación, autenticación, verificación de estado y tipo
-- **Salida**: Token JWT o error
+### Capas de la Aplicación:
 
-### 2. **Proceso de Autenticación Detallado**
-- **Validaciones**: Formato, credenciales, estado del usuario, tipo de usuario
-- **Puntos de decisión**: 4 niveles de validación
-- **Resultados**: Éxito con token o error específico
+1. **Capa de Presentación (Controllers)**:
+   - `AuthController`: Maneja autenticación (login interno/externo)
+   - `UserController`: Maneja registro de usuarios
 
-### 3. **Proceso de Registro Externo**
-- **Validaciones**: 6 campos obligatorios con validaciones específicas
-- **Verificaciones**: Unicidad de email y documento
-- **Configuración**: Usuario inactivo, externo, username = documento
+2. **Capa de Servicios**:
+   - `AuthServiceImpl`: Lógica de autenticación y generación de tokens JWT
+   - `UserServiceImpl`: Lógica de negocio para gestión de usuarios
 
-### 4. **Proceso de Registro Interno**
-- **Validaciones**: 7 campos obligatorios + roles
-- **Verificaciones**: Unicidad de email, documento y username
-- **Configuración**: Usuario activo, interno, roles asignados
+3. **Capa de Datos**:
+   - `UserRepository`: Acceso a datos de usuarios
+   - `RoleRepository`: Acceso a datos de roles
+   - `UserRoleRepository`: Acceso a datos de relaciones usuario-rol
 
-### 5. **Proceso de Validación de Seguridad**
-- **Validaciones**: Token JWT, expiración, usuario activo
-- **Autorización**: Verificación de permisos y estado
+4. **Capa de Seguridad**:
+   - `JwtUtil`: Utilidades para manejo de tokens JWT
+   - `CustomUserDetails`: Detalles del usuario para Spring Security
+   - `JwtRequestFilter`: Filtro para validación de tokens JWT
 
-### Características Clave de los Procesos:
+### Patrones de Diseño Utilizados:
 
-1. **Validación en Cascada**: Cada proceso valida datos en orden específico
-2. **Manejo de Errores**: Puntos de decisión con rutas de error claras
-3. **Seguridad**: Múltiples capas de validación y verificación
-4. **Trazabilidad**: Cada paso está documentado y puede ser auditado
-5. **Escalabilidad**: Procesos modulares que pueden extenderse fácilmente
+- **Repository Pattern**: Para acceso a datos
+- **Service Layer Pattern**: Para lógica de negocio
+- **DTO Pattern**: Para transferencia de datos
+- **Builder Pattern**: Para construcción de entidades
+- **Strategy Pattern**: Para diferentes tipos de autenticación (interno/externo)
 
-### Flujos de Excepción:
-- **Errores de Validación**: Retorno inmediato con mensaje específico
-- **Errores de Negocio**: Verificación de reglas de negocio
-- **Errores de Sistema**: Manejo de fallos de base de datos o servicios
+### Flujo de Datos:
 
-### Puntos de Control:
-- **Validación de Entrada**: Formato y estructura de datos
-- **Validación de Negocio**: Reglas específicas del dominio
-- **Validación de Seguridad**: Autenticación y autorización
-- **Validación de Persistencia**: Operaciones de base de datos
+1. **Autenticación**: Cliente → Controller → Service → Repository → Database
+2. **Registro**: Cliente → Controller → Service → Repository → Database
+3. **Validación**: Service → Repository → Database (verificación de unicidad)
+4. **Seguridad**: JWT Token → Filter → Service → Database
+
