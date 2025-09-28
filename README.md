@@ -214,10 +214,10 @@ classDiagram
     UserServiceImpl --> RoleService
     UserServiceImpl --> UserRoleService
     
-    User ||--o{ UserRole
-    Role ||--o{ UserRole
-    User ||--o{ EmailVerification
-    User ||--o{ RecoveryToken
+    User --> UserRole
+    Role --> UserRole
+    User --> EmailVerification
+    User --> RecoveryToken
     
     UserRepository --> User
     RoleRepository --> Role
@@ -448,4 +448,5 @@ graph TB
 - **DTO Pattern**: Para transferencia de datos
 - **Builder Pattern**: Para construcción de entidades
 - **Strategy Pattern**: Para diferentes tipos de autenticación
+
 
