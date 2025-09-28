@@ -441,12 +441,4 @@ graph TB
 3. **Validación**: Service → Repository → Database
 4. **Seguridad**: JWT Token → Filter → Service → Database
 
-### **Patrones Utilizados:**
-
-- **Repository Pattern**: Para acceso a datos
-- **Service Layer Pattern**: Para lógica de negocio
-- **DTO Pattern**: Para transferencia de datos
-- **Builder Pattern**: Para construcción de entidades
-- **Strategy Pattern**: Para diferentes tipos de autenticación
-
 
