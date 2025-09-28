@@ -1,53 +1,40 @@
-# Diagrama UML - Sistema de Gestión de Usuarios
+# Diagrama UML Simplificado - Sistema de Gestión de Usuarios
 
-## Diagrama de Clases UML
+## Diagrama de Clases Principal
 
 ```mermaid
 classDiagram
     %% Controladores
     class AuthController {
-        -AuthServiceImpl authServiceImpl
-        +loginInternal(LoginRequest) ResponseEntity~LoginResponse~
-        +loginExternal(LoginRequest) ResponseEntity~LoginResponse~
-        -mapToUserResponse(UserModel) UserResponse
+        -AuthServiceImpl authService
+        +loginInternal(LoginRequest) LoginResponse
+        +loginExternal(LoginRequest) LoginResponse
     }
     
     class UserController {
         -UserService userService
-        +registerExternal(ExternalUserRegisterRequestDTO) ResponseEntity~ExternalUserRegisterResponseDTO~
-        +registerInternal(InternalUserRegisterRequestDTO) ResponseEntity~InternalUserRegisterResponseDTO~
-        +getAll() ResponseEntity~List~UserDebugModel~~
+        +registerExternal(ExternalUserRegisterRequestDTO) ExternalUserRegisterResponseDTO
+        +registerInternal(InternalUserRegisterRequestDTO) InternalUserRegisterResponseDTO
+        +getAll() List~UserDebugModel~
     }
     
     %% Servicios
     class AuthServiceImpl {
-        -AuthenticationManager authenticationManager
+        -AuthenticationManager authManager
         -JwtUtil jwtUtil
-        -UserServiceImpl usuarioService
+        -UserService userService
         +loginInternal(String, String) LoginResult
         +loginExternal(String, String) LoginResult
-        -mapToModel(User) UserModel
     }
     
     class UserServiceImpl {
         -UserRepository userRepository
-        -ModelMapper modelMapper
         -RoleService roleService
         -PasswordEncoder passwordEncoder
-        -UserRoleService userRoleService
-        +findById(Long) UserModel
-        +findByUsername(String) UserModel
-        +findByEmail(String) UserModel
-        +findAll() List~UserModel~
-        +loadUserByUsername(String) CustomUserDetails
         +registerExternal(ExternalUserRegisterRequestDTO) ExternalUserRegisterResponseDTO
         +registerInternal(InternalUserRegisterRequestDTO) InternalUserRegisterResponseDTO
-        +getAll() List~UserDebugModel~
-        -buildExternalUser(ExternalUserRegisterRequestDTO, String, String) User
-        -buildInternalUser(InternalUserRegisterRequestDTO, String, String, String) User
-        -validationDocument(String) void
-        -validationEmail(String) void
-        -mapToModel(User) UserModel
+        +findByUsername(String) UserModel
+        +loadUserByUsername(String) CustomUserDetails
     }
     
     %% Entidades
@@ -64,94 +51,51 @@ classDiagram
         -Boolean isExternal
         -LocalDateTime createdAt
         -LocalDateTime updatedAt
-        -Set~UserRole~ userRoles
-        +getId() Long
-        +getFirstName() String
-        +getLastName() String
-        +getUsername() String
-        +getEmail() String
-        +getDocument() String
-        +getPasswordHash() String
-        +getIsActive() Boolean
-        +getIsEmailVerified() Boolean
-        +getIsExternal() Boolean
-        +getCreatedAt() LocalDateTime
-        +getUpdatedAt() LocalDateTime
-        +getUserRoles() Set~UserRole~
     }
     
     class Role {
         -Long id
         -String name
         -String description
-        -Set~UserRole~ userRoles
-        +getId() Long
-        +getName() String
-        +getDescription() String
-        +getUserRoles() Set~UserRole~
     }
     
     class UserRole {
         -UserRoleId id
         -User user
         -Role role
-        +getId() UserRoleId
-        +getUser() User
-        +getRole() Role
     }
     
-    class UserRoleId {
-        -Long userId
-        -Long roleId
-        +getUserId() Long
-        +getRoleId() Long
-    }
-    
-    class EmailVerification {
-        -Long id
-        -User user
-        -String token
-        -LocalDateTime expiresAt
-        -Boolean isUsed
-        +getId() Long
-        +getUser() User
-        +getToken() String
-        +getExpiresAt() LocalDateTime
-        +getIsUsed() Boolean
-    }
-    
-    class RecoveryToken {
-        -Long id
-        -User user
-        -String token
-        -LocalDateTime expiresAt
-        -Boolean isUsed
-        +getId() Long
-        +getUser() User
-        +getToken() String
-        +getExpiresAt() LocalDateTime
-        +getIsUsed() Boolean
-    }
-    
-    %% DTOs
+    %% DTOs de Request
     class LoginRequest {
         -String username
         -String email
         -String password
-        +getUsername() String
-        +getEmail() String
-        +getPassword() String
     }
     
+    class ExternalUserRegisterRequestDTO {
+        -String firstName
+        -String lastName
+        -String email
+        -String document
+        -String passwordHash
+    }
+    
+    class InternalUserRegisterRequestDTO {
+        -String firstName
+        -String lastName
+        -String document
+        -String email
+        -String username
+        -String passwordHash
+        -List~Long~ role
+    }
+    
+    %% DTOs de Response
     class LoginResponse {
         -Boolean success
         -String message
         -UserResponse user
         -String token
-        +getSuccess() Boolean
-        +getMessage() String
-        +getUser() UserResponse
-        +getToken() String
     }
     
     class UserResponse {
@@ -166,56 +110,12 @@ classDiagram
         -Boolean isExternal
         -LocalDateTime createdAt
         -LocalDateTime updatedAt
-        +getId() Long
-        +getFirstName() String
-        +getLastName() String
-        +getUsername() String
-        +getEmail() String
-        +getDocument() String
-        +getIsActive() Boolean
-        +getIsEmailVerified() Boolean
-        +getIsExternal() Boolean
-        +getCreatedAt() LocalDateTime
-        +getUpdatedAt() LocalDateTime
-    }
-    
-    class ExternalUserRegisterRequestDTO {
-        -String firstName
-        -String lastName
-        -String email
-        -String document
-        -String passwordHash
-        +getFirstName() String
-        +getLastName() String
-        +getEmail() String
-        +getDocument() String
-        +getPasswordHash() String
     }
     
     class ExternalUserRegisterResponseDTO {
         -Long id
         -String email
         -String message
-        +getId() Long
-        +getEmail() String
-        +getMessage() String
-    }
-    
-    class InternalUserRegisterRequestDTO {
-        -String firstName
-        -String lastName
-        -String document
-        -String email
-        -String username
-        -String passwordHash
-        -List~Long~ role
-        +getFirstName() String
-        +getLastName() String
-        +getDocument() String
-        +getEmail() String
-        +getUsername() String
-        +getPasswordHash() String
-        +getRole() List~Long~
     }
     
     class InternalUserRegisterResponseDTO {
@@ -227,40 +127,6 @@ classDiagram
         -String userName
         -Boolean isActive
         -String message
-        +getId() Long
-        +getFirstName() String
-        +getLastName() String
-        +getDocument() String
-        +getEmail() String
-        +getUserName() String
-        +getIsActive() Boolean
-        +getMessage() String
-    }
-    
-    class UserDebugModel {
-        -Long id
-        -String firstName
-        -String lastName
-        -String username
-        -String email
-        -String document
-        -String passwordHash
-        -Boolean isActive
-        -Boolean isExternal
-        -LocalDateTime createdAt
-        -List~String~ roles
-        +getId() Long
-        +getFirstName() String
-        +getLastName() String
-        +getUsername() String
-        +getEmail() String
-        +getDocument() String
-        +getPasswordHash() String
-        +getIsActive() Boolean
-        +getIsExternal() Boolean
-        +getCreatedAt() LocalDateTime
-        +getRoles() List~String~
-        +fromEntity(User) UserDebugModel
     }
     
     %% Modelos
@@ -276,24 +142,11 @@ classDiagram
         -Boolean isExternal
         -LocalDateTime createdAt
         -LocalDateTime updatedAt
-        +getId() Long
-        +getFirstName() String
-        +getLastName() String
-        +getUsername() String
-        +getEmail() String
-        +getDocument() String
-        +getIsActive() Boolean
-        +getIsEmailVerified() Boolean
-        +getIsExternal() Boolean
-        +getCreatedAt() LocalDateTime
-        +getUpdatedAt() LocalDateTime
     }
     
     class LoginResult {
         -UserModel user
         -String token
-        +getUser() UserModel
-        +getToken() String
     }
     
     %% Seguridad
@@ -301,11 +154,7 @@ classDiagram
         -Long id
         -String username
         -String password
-        -Collection~GrantedAuthority~ authorities
-        +getId() Long
-        +getUsername() String
-        +getPassword() String
-        +getAuthorities() Collection~GrantedAuthority~
+        -Collection authorities
     }
     
     class JwtUtil {
@@ -314,12 +163,6 @@ classDiagram
         +generateToken(CustomUserDetails) String
         +extractUsername(String) String
         +validateToken(String, CustomUserDetails) Boolean
-    }
-    
-    class JwtRequestFilter {
-        -JwtUtil jwtUtil
-        -UserServiceImpl userService
-        +doFilterInternal(ServletRequest, ServletResponse, FilterChain) void
     }
     
     %% Repositorios
@@ -362,39 +205,35 @@ classDiagram
         +findByRole(Role) List~UserRole~
     }
     
-    %% Relaciones
-    AuthController --> AuthServiceImpl : uses
-    UserController --> UserServiceImpl : uses
-    AuthServiceImpl --> UserServiceImpl : uses
-    AuthServiceImpl --> JwtUtil : uses
-    UserServiceImpl --> UserRepository : uses
-    UserServiceImpl --> RoleService : uses
-    UserServiceImpl --> UserRoleService : uses
-    UserServiceImpl --> PasswordEncoder : uses
+    %% Relaciones principales
+    AuthController --> AuthServiceImpl
+    UserController --> UserServiceImpl
+    AuthServiceImpl --> UserServiceImpl
+    AuthServiceImpl --> JwtUtil
+    UserServiceImpl --> UserRepository
+    UserServiceImpl --> RoleService
+    UserServiceImpl --> UserRoleService
     
-    User ||--o{ UserRole : has
-    Role ||--o{ UserRole : assigned to
-    UserRole }o--|| UserRoleId : identified by
-    User ||--o{ EmailVerification : has
-    User ||--o{ RecoveryToken : has
+    User ||--o{ UserRole
+    Role ||--o{ UserRole
+    User ||--o{ EmailVerification
+    User ||--o{ RecoveryToken
     
-    UserRepository --> User : manages
-    RoleRepository --> Role : manages
-    UserRoleRepository --> UserRole : manages
+    UserRepository --> User
+    RoleRepository --> Role
+    UserRoleRepository --> UserRole
     
-    RoleService --> RoleRepository : uses
-    UserRoleService --> UserRoleRepository : uses
+    RoleService --> RoleRepository
+    UserRoleService --> UserRoleRepository
     
     %% Conversiones
-    UserModel <-- User : maps to
-    UserResponse <-- UserModel : maps to
-    UserDebugModel <-- User : maps to
-    LoginResult --> UserModel : contains
-    LoginResponse --> UserResponse : contains
-    LoginResponse --> LoginResult : maps from
+    UserModel <-- User
+    UserResponse <-- UserModel
+    LoginResult --> UserModel
+    LoginResponse --> UserResponse
 ```
 
-## Diagrama de Secuencia - Proceso de Login
+## Diagrama de Secuencia - Login Interno
 
 ```mermaid
 sequenceDiagram
@@ -436,7 +275,7 @@ sequenceDiagram
     Note over Client,AuthController: 200 OK con datos del usuario y token
 ```
 
-## Diagrama de Secuencia - Proceso de Registro Externo
+## Diagrama de Secuencia - Registro Externo
 
 ```mermaid
 sequenceDiagram
@@ -473,7 +312,7 @@ sequenceDiagram
     Note over Client,UserController: {id, email, message}
 ```
 
-## Diagrama de Secuencia - Proceso de Registro Interno
+## Diagrama de Secuencia - Registro Interno
 
 ```mermaid
 sequenceDiagram
@@ -522,40 +361,91 @@ sequenceDiagram
     Note over Client,UserController: {id, firstName, lastName, document, email, userName, isActive, message}
 ```
 
+## Arquitectura del Sistema
+
+```mermaid
+graph TB
+    subgraph "Capa de Presentación"
+        AC[AuthController]
+        UC[UserController]
+    end
+    
+    subgraph "Capa de Servicios"
+        AS[AuthServiceImpl]
+        US[UserServiceImpl]
+        RS[RoleService]
+        URS[UserRoleService]
+    end
+    
+    subgraph "Capa de Datos"
+        UR[UserRepository]
+        RR[RoleRepository]
+        URR[UserRoleRepository]
+    end
+    
+    subgraph "Capa de Seguridad"
+        JU[JwtUtil]
+        CUD[CustomUserDetails]
+        JRF[JwtRequestFilter]
+    end
+    
+    subgraph "Base de Datos"
+        DB[(Database)]
+    end
+    
+    AC --> AS
+    UC --> US
+    AS --> US
+    AS --> JU
+    US --> UR
+    US --> RS
+    US --> URS
+    RS --> RR
+    URS --> URR
+    UR --> DB
+    RR --> DB
+    URR --> DB
+    JU --> CUD
+    JRF --> JU
+    JRF --> US
+```
+
 ## Resumen de la Arquitectura
 
-### Capas de la Aplicación:
+### **Capas del Sistema:**
 
 1. **Capa de Presentación (Controllers)**:
-   - `AuthController`: Maneja autenticación (login interno/externo)
+   - `AuthController`: Maneja autenticación
    - `UserController`: Maneja registro de usuarios
 
 2. **Capa de Servicios**:
-   - `AuthServiceImpl`: Lógica de autenticación y generación de tokens JWT
-   - `UserServiceImpl`: Lógica de negocio para gestión de usuarios
+   - `AuthServiceImpl`: Lógica de autenticación
+   - `UserServiceImpl`: Lógica de gestión de usuarios
+   - `RoleService`: Gestión de roles
+   - `UserRoleService`: Gestión de relaciones usuario-rol
 
 3. **Capa de Datos**:
    - `UserRepository`: Acceso a datos de usuarios
    - `RoleRepository`: Acceso a datos de roles
-   - `UserRoleRepository`: Acceso a datos de relaciones usuario-rol
+   - `UserRoleRepository`: Acceso a relaciones
 
 4. **Capa de Seguridad**:
-   - `JwtUtil`: Utilidades para manejo de tokens JWT
-   - `CustomUserDetails`: Detalles del usuario para Spring Security
-   - `JwtRequestFilter`: Filtro para validación de tokens JWT
+   - `JwtUtil`: Manejo de tokens JWT
+   - `CustomUserDetails`: Detalles del usuario
+   - `JwtRequestFilter`: Filtro de autenticación
 
-### Patrones de Diseño Utilizados:
+### **Flujos Principales:**
+
+1. **Autenticación**: Cliente → Controller → Service → Repository → Database
+2. **Registro**: Cliente → Controller → Service → Repository → Database
+3. **Validación**: Service → Repository → Database
+4. **Seguridad**: JWT Token → Filter → Service → Database
+
+### **Patrones Utilizados:**
 
 - **Repository Pattern**: Para acceso a datos
 - **Service Layer Pattern**: Para lógica de negocio
 - **DTO Pattern**: Para transferencia de datos
 - **Builder Pattern**: Para construcción de entidades
-- **Strategy Pattern**: Para diferentes tipos de autenticación (interno/externo)
-
-### Flujo de Datos:
-
-1. **Autenticación**: Cliente → Controller → Service → Repository → Database
-2. **Registro**: Cliente → Controller → Service → Repository → Database
-3. **Validación**: Service → Repository → Database (verificación de unicidad)
-4. **Seguridad**: JWT Token → Filter → Service → Database
+- **Strategy Pattern**: Para diferentes tipos de autenticación
 
