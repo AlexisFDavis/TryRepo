@@ -322,14 +322,6 @@ flowchart TD
 - **Validaciones**: Token JWT, expiración, usuario activo
 - **Autorización**: Verificación de permisos y estado
 
-### Características Clave de los Procesos:
-
-1. **Validación en Cascada**: Cada proceso valida datos en orden específico
-2. **Manejo de Errores**: Puntos de decisión con rutas de error claras
-3. **Seguridad**: Múltiples capas de validación y verificación
-4. **Trazabilidad**: Cada paso está documentado y puede ser auditado
-5. **Escalabilidad**: Procesos modulares que pueden extenderse fácilmente
-
 ### Flujos de Excepción:
 - **Errores de Validación**: Retorno inmediato con mensaje específico
 - **Errores de Negocio**: Verificación de reglas de negocio
