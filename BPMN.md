@@ -1,4 +1,4 @@
-# Diagrama BPMN Actualizado - Sistema de Gestión de Usuarios
+# Diagrama BPMN - Sistema de Gestión de Usuarios
 
 ## Proceso Principal de Autenticación y Registro
 
@@ -362,7 +362,7 @@ flowchart TD
     class ExtractUsername,ValidateTokenExpiry security
 ```
 
-## Resumen de Procesos BPMN Actualizados
+## Resumen de Procesos BPMN 
 
 ### **1. Proceso Principal de Autenticación y Registro**
 - **Entrada**: Credenciales de usuario (username/email, password)
