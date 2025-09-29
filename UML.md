@@ -1,4 +1,4 @@
-# Diagrama UML Actualizado - Sistema de Gestión de Usuarios
+# Diagrama UML - Sistema de Gestión de Usuarios
 
 ## Diagrama de Clases Principal
 
@@ -514,7 +514,7 @@ graph TB
     JRF --> US
 ```
 
-## Resumen de la Arquitectura Actualizada
+## Resumen de la Arquitectura 
 
 ### **Capas del Sistema:**
 
