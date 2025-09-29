@@ -399,9 +399,3 @@ flowchart TD
 - **Autorización**: Verificación de permisos y estado
 - **Nuevo**: Incluye JwtUtil.extractUsername y JwtUtil.validateToken
 
-### **Puntos de Control Actualizados:**
-- **Validación de Entrada**: Formato y estructura de datos
-- **Validación de Negocio**: Reglas específicas del dominio
-- **Validación de Seguridad**: AuthenticationManager y JWT
-- **Validación de Persistencia**: Operaciones de base de datos con Repository
-- **Validación de Mapeo**: ModelMapper para conversiones
