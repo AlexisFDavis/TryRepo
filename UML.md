@@ -1,4 +1,4 @@
-# Diagrama UML Simplificado - Sistema de Gestión de Usuarios
+# Diagrama UML Actualizado - Sistema de Gestión de Usuarios
 
 ## Diagrama de Clases Principal
 
@@ -6,35 +6,48 @@
 classDiagram
     %% Controladores
     class AuthController {
-        -AuthServiceImpl authService
-        +loginInternal(LoginRequest) LoginResponse
-        +loginExternal(LoginRequest) LoginResponse
+        -AuthServiceImpl authServiceImpl
+        +loginInternal(LoginRequest) ResponseEntity~LoginResponse~
+        +loginExternal(LoginRequest) ResponseEntity~LoginResponse~
+        -mapToUserResponse(UserModel) UserResponse
     }
     
     class UserController {
         -UserService userService
-        +registerExternal(ExternalUserRegisterRequestDTO) ExternalUserRegisterResponseDTO
-        +registerInternal(InternalUserRegisterRequestDTO) InternalUserRegisterResponseDTO
-        +getAll() List~UserDebugModel~
+        +registerExternal(ExternalUserRegisterRequestDTO) ResponseEntity~ExternalUserRegisterResponseDTO~
+        +registerInternal(InternalUserRegisterRequestDTO) ResponseEntity~InternalUserRegisterResponseDTO~
+        +getAll() ResponseEntity~List~UserDebugModel~~
     }
     
     %% Servicios
     class AuthServiceImpl {
-        -AuthenticationManager authManager
+        -AuthenticationManager authenticationManager
         -JwtUtil jwtUtil
-        -UserService userService
+        -UserServiceImpl usuarioService
         +loginInternal(String, String) LoginResult
         +loginExternal(String, String) LoginResult
+        -mapToModel(User) UserModel
     }
     
     class UserServiceImpl {
         -UserRepository userRepository
+        -ModelMapper modelMapper
         -RoleService roleService
         -PasswordEncoder passwordEncoder
+        -UserRoleService userRoleService
+        +findById(Long) UserModel
+        +findByUsername(String) UserModel
+        +findByEmail(String) UserModel
+        +findAll() List~UserModel~
+        +loadUserByUsername(String) CustomUserDetails
         +registerExternal(ExternalUserRegisterRequestDTO) ExternalUserRegisterResponseDTO
         +registerInternal(InternalUserRegisterRequestDTO) InternalUserRegisterResponseDTO
-        +findByUsername(String) UserModel
-        +loadUserByUsername(String) CustomUserDetails
+        +getAll() List~UserDebugModel~
+        -buildExternalUser(ExternalUserRegisterRequestDTO, String, String) User
+        -buildInternalUser(InternalUserRegisterRequestDTO, String, String, String) User
+        -validationDocument(String) void
+        -validationEmail(String) void
+        -mapToModel(User) UserModel
     }
     
     %% Entidades
@@ -51,18 +64,41 @@ classDiagram
         -Boolean isExternal
         -LocalDateTime createdAt
         -LocalDateTime updatedAt
+        -Set~UserRole~ userRoles
     }
     
     class Role {
         -Long id
         -String name
         -String description
+        -Set~UserRole~ userRoles
     }
     
     class UserRole {
         -UserRoleId id
         -User user
         -Role role
+    }
+    
+    class UserRoleId {
+        -Long userId
+        -Long roleId
+    }
+    
+    class EmailVerification {
+        -Long id
+        -User user
+        -String token
+        -LocalDateTime expiresAt
+        -Boolean isUsed
+    }
+    
+    class RecoveryToken {
+        -Long id
+        -User user
+        -String token
+        -LocalDateTime expiresAt
+        -Boolean isUsed
     }
     
     %% DTOs de Request
@@ -129,6 +165,21 @@ classDiagram
         -String message
     }
     
+    class UserDebugModel {
+        -Long id
+        -String firstName
+        -String lastName
+        -String username
+        -String email
+        -String document
+        -String passwordHash
+        -Boolean isActive
+        -Boolean isExternal
+        -LocalDateTime createdAt
+        -List~String~ roles
+        +fromEntity(User) UserDebugModel
+    }
+    
     %% Modelos
     class UserModel {
         -Long id
@@ -163,6 +214,12 @@ classDiagram
         +generateToken(CustomUserDetails) String
         +extractUsername(String) String
         +validateToken(String, CustomUserDetails) Boolean
+    }
+    
+    class JwtRequestFilter {
+        -JwtUtil jwtUtil
+        -UserServiceImpl userService
+        +doFilterInternal(ServletRequest, ServletResponse, FilterChain) void
     }
     
     %% Repositorios
@@ -205,9 +262,17 @@ classDiagram
         +findByRole(Role) List~UserRole~
     }
     
+    %% Interfaces
+    class UserService {
+        +registerExternal(ExternalUserRegisterRequestDTO) ExternalUserRegisterResponseDTO
+        +registerInternal(InternalUserRegisterRequestDTO) InternalUserRegisterResponseDTO
+        +getAll() List~UserDebugModel~
+    }
+    
     %% Relaciones principales
     AuthController --> AuthServiceImpl
-    UserController --> UserServiceImpl
+    UserController --> UserService
+    UserService <|-- UserServiceImpl
     AuthServiceImpl --> UserServiceImpl
     AuthServiceImpl --> JwtUtil
     UserServiceImpl --> UserRepository
@@ -226,14 +291,18 @@ classDiagram
     RoleService --> RoleRepository
     UserRoleService --> UserRoleRepository
     
+    JwtRequestFilter --> JwtUtil
+    JwtRequestFilter --> UserServiceImpl
+    
     %% Conversiones
     UserModel <-- User
     UserResponse <-- UserModel
     LoginResult --> UserModel
     LoginResponse --> UserResponse
+    UserDebugModel <-- User
 ```
 
-## Diagrama de Secuencia - Login Interno
+## Diagrama de Secuencia - Proceso de Login Interno
 
 ```mermaid
 sequenceDiagram
@@ -243,14 +312,15 @@ sequenceDiagram
     participant UserService as UserServiceImpl
     participant UserRepo as UserRepository
     participant JwtUtil as JwtUtil
+    participant AuthManager as AuthenticationManager
     
     Client->>AuthController: POST /api/v1/auth/internal/login
     Note over Client,AuthController: LoginRequest{username, password}
     
     AuthController->>AuthService: loginInternal(username, password)
     
-    AuthService->>AuthService: authenticationManager.authenticate()
-    Note over AuthService: Validar credenciales
+    AuthService->>AuthManager: authenticate(UsernamePasswordAuthenticationToken)
+    AuthManager-->>AuthService: Authentication result
     
     AuthService->>UserService: loadUserByUsername(username)
     UserService->>UserRepo: findByUsername(username)
@@ -275,7 +345,7 @@ sequenceDiagram
     Note over Client,AuthController: 200 OK con datos del usuario y token
 ```
 
-## Diagrama de Secuencia - Registro Externo
+## Diagrama de Secuencia - Proceso de Registro Externo
 
 ```mermaid
 sequenceDiagram
@@ -312,7 +382,7 @@ sequenceDiagram
     Note over Client,UserController: {id, email, message}
 ```
 
-## Diagrama de Secuencia - Registro Interno
+## Diagrama de Secuencia - Proceso de Registro Interno
 
 ```mermaid
 sequenceDiagram
@@ -361,6 +431,31 @@ sequenceDiagram
     Note over Client,UserController: {id, firstName, lastName, document, email, userName, isActive, message}
 ```
 
+## Diagrama de Secuencia - Proceso de Obtener Todos los Usuarios
+
+```mermaid
+sequenceDiagram
+    participant Client as Cliente
+    participant UserController as UserController
+    participant UserService as UserServiceImpl
+    participant UserRepo as UserRepository
+    participant ModelMapper as ModelMapper
+    
+    Client->>UserController: GET /api/v1/user/
+    
+    UserController->>UserService: getAll()
+    
+    UserService->>UserRepo: findAll()
+    UserRepo-->>UserService: List<User>
+    
+    UserService->>ModelMapper: map(user, UserDebugModel.class)
+    ModelMapper-->>UserService: UserDebugModel
+    
+    UserService-->>UserController: List<UserDebugModel>
+    UserController-->>Client: 200 OK
+    Note over Client,UserController: Lista de usuarios con información de debug
+```
+
 ## Arquitectura del Sistema
 
 ```mermaid
@@ -387,6 +482,12 @@ graph TB
         JU[JwtUtil]
         CUD[CustomUserDetails]
         JRF[JwtRequestFilter]
+        AM[AuthenticationManager]
+    end
+    
+    subgraph "Capa de Utilidades"
+        PE[PasswordEncoder]
+        MM[ModelMapper]
     end
     
     subgraph "Base de Datos"
@@ -397,9 +498,12 @@ graph TB
     UC --> US
     AS --> US
     AS --> JU
+    AS --> AM
     US --> UR
     US --> RS
     US --> URS
+    US --> PE
+    US --> MM
     RS --> RR
     URS --> URR
     UR --> DB
@@ -410,17 +514,17 @@ graph TB
     JRF --> US
 ```
 
-## Resumen de la Arquitectura
+## Resumen de la Arquitectura Actualizada
 
 ### **Capas del Sistema:**
 
 1. **Capa de Presentación (Controllers)**:
-   - `AuthController`: Maneja autenticación
-   - `UserController`: Maneja registro de usuarios
+   - `AuthController`: Maneja autenticación (login interno/externo)
+   - `UserController`: Maneja registro de usuarios y listado
 
 2. **Capa de Servicios**:
-   - `AuthServiceImpl`: Lógica de autenticación
-   - `UserServiceImpl`: Lógica de gestión de usuarios
+   - `AuthServiceImpl`: Lógica de autenticación y generación de tokens JWT
+   - `UserServiceImpl`: Lógica de negocio para gestión de usuarios
    - `RoleService`: Gestión de roles
    - `UserRoleService`: Gestión de relaciones usuario-rol
 
@@ -431,14 +535,18 @@ graph TB
 
 4. **Capa de Seguridad**:
    - `JwtUtil`: Manejo de tokens JWT
-   - `CustomUserDetails`: Detalles del usuario
-   - `JwtRequestFilter`: Filtro de autenticación
+   - `CustomUserDetails`: Detalles del usuario para Spring Security
+   - `JwtRequestFilter`: Filtro para validación de tokens JWT
+   - `AuthenticationManager`: Gestión de autenticación
+
+5. **Capa de Utilidades**:
+   - `PasswordEncoder`: Encriptación de contraseñas
+   - `ModelMapper`: Mapeo entre entidades y DTOs
 
 ### **Flujos Principales:**
 
-1. **Autenticación**: Cliente → Controller → Service → Repository → Database
+1. **Autenticación**: Cliente → Controller → Service → AuthenticationManager → Repository → Database
 2. **Registro**: Cliente → Controller → Service → Repository → Database
 3. **Validación**: Service → Repository → Database
 4. **Seguridad**: JWT Token → Filter → Service → Database
-
 
